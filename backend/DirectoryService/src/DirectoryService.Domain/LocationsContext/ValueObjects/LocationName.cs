@@ -1,3 +1,5 @@
+using DirectoryService.Domain.Shared;
+
 public sealed record LocationName
 {
     public const int MaxLength = 128;
@@ -12,21 +14,23 @@ public sealed record LocationName
 
     public static LocationName Create(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Название локации не может быть пустым.", nameof(value));
+        string formatted = value.TrimSpaces().FirstCharacterToUpper();
 
-        if (value.Length > MaxLength)
+        if (string.IsNullOrWhiteSpace(formatted))
+            throw new ArgumentException("Название локации не может быть пустым.", nameof(formatted));
+
+        if (formatted.Length > MaxLength)
             throw new ArgumentException(
                 $"Название локации не может превышать {MaxLength} символов.",
-                nameof(value)
+                nameof(formatted)
             );
 
-        if (value.Length < MinLength)
+        if (formatted.Length < MinLength)
             throw new ArgumentException(
                 $"Название локации должно быть от {MinLength} до {MaxLength} символов.",
-                nameof(value)
+                nameof(formatted)
             );
 
-        return new LocationName(value);
+        return new LocationName(formatted);
     }
 }

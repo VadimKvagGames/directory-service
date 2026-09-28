@@ -1,3 +1,5 @@
+using DirectoryService.Domain.Shared;
+
 public sealed record DepartmentName
 {
     public const int MaxLength = 200;
@@ -9,14 +11,18 @@ public sealed record DepartmentName
 
     public static DepartmentName Create(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Название подразделения не может быть пустым.", nameof(value));
+        string formatted = value
+            .TrimSpaces()
+            .FirstCharacterToUpper();
 
-        if (value.Length < MinLength || value.Length > MaxLength)
+        if (string.IsNullOrWhiteSpace(formatted))
+            throw new ArgumentException("Название подразделения не может быть пустым.", nameof(formatted));
+
+        if (formatted.Length < MinLength || formatted.Length > MaxLength)
             throw new ArgumentException(
                 $"Название подразделения должно быть от {MinLength} до {MaxLength} символов.",
-                nameof(value));
+                nameof(formatted));
 
-        return new DepartmentName(value);
+        return new DepartmentName(formatted);
     }
 }

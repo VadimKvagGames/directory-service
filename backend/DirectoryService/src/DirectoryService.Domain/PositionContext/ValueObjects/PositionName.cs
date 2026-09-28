@@ -1,3 +1,5 @@
+using DirectoryService.Domain.Shared;
+
 public sealed record PositionName
 {
     public const int MaxLength = 150;
@@ -9,14 +11,16 @@ public sealed record PositionName
 
     public static PositionName Create(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException("Название должности не может быть пустым.", nameof(value));
+        string formatted = value.TrimSpaces().FirstCharacterToUpper();
 
-        if (value.Length < MinLength || value.Length > MaxLength)
+        if (string.IsNullOrWhiteSpace(formatted))
+            throw new ArgumentException("Название должности не может быть пустым.", nameof(formatted));
+
+        if (formatted.Length < MinLength || formatted.Length > MaxLength)
             throw new ArgumentException(
                 $"Название должности должно быть от {MinLength} до {MaxLength} символов.",
-                nameof(value));
+                nameof(formatted));
 
-        return new PositionName(value);
+        return new PositionName(formatted);
     }
 }
