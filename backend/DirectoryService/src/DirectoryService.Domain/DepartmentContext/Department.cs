@@ -17,7 +17,8 @@ public class Department
         DepartmentSlug slug,
         DepartmentId? parentId,
         IEnumerable<LocationId> locations,
-        EntityLifeTime lifeTime)
+        EntityLifeTime lifeTime
+        )
     {
         Path = DepartmentPath.Create(slug);
         Id = id;
