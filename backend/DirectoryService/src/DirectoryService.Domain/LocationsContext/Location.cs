@@ -10,7 +10,7 @@ public class Location
     public IanaTimeZone TimeZone { get; private set; }
     public EntityLifeTime LifeTime { get; private set; }
 
-    private Location(
+    public Location(
         LocationId id,
         LocationAddress address,
         LocationName name,
@@ -18,11 +18,11 @@ public class Location
         EntityLifeTime lifeTime
     )
     {
-        Id = id ?? throw new ArgumentNullException(nameof(id));
-        Address = address ?? throw new ArgumentNullException(nameof(address));
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        TimeZone = timeZone ?? throw new ArgumentNullException(nameof(timeZone));
-        LifeTime = lifeTime ?? throw new ArgumentNullException(nameof(lifeTime));
+        Id = id;
+        Address = address;
+        Name = name;
+        TimeZone = timeZone;
+        LifeTime = lifeTime;
     }
 
     public static Location Create(
@@ -39,10 +39,10 @@ public class Location
     }
 
     public void Update(
-        LocationName newName,
-        LocationAddress newAddress,
-        IanaTimeZone newTimeZone,
-        DateTime currentUtcTime
+        DateTime currentUtcTime,
+        LocationName? newName = null,
+        LocationAddress? newAddress = null,
+        IanaTimeZone? newTimeZone = null
     )
     {
         if (!LifeTime.IsActive)
@@ -50,11 +50,30 @@ public class Location
             throw new InvalidOperationException("Редактирование архивированных локаций запрещено.");
         }
 
-        Name = newName ?? throw new ArgumentNullException(nameof(newName));
-        Address = newAddress ?? throw new ArgumentNullException(nameof(newAddress));
-        TimeZone = newTimeZone ?? throw new ArgumentNullException(nameof(newTimeZone));
+        bool isChanged = false;
 
-        LifeTime = EntityLifeTime.Create(LifeTime.CreatedAt, currentUtcTime, LifeTime.IsActive);
+        if (newName != null)
+        {
+            Name = newName;
+            isChanged = true;
+        }
+
+        if (newAddress != null)
+        {
+            Address = newAddress;
+            isChanged = true;
+        }
+
+        if (newTimeZone != null)
+        {
+            TimeZone = newTimeZone;
+            isChanged = true;
+        }
+
+        if (isChanged)
+        {
+            LifeTime = LifeTime with { UpdatedAt = currentUtcTime };
+        }
     }
 
     public void Archive(DateTime currentUtcTime)
