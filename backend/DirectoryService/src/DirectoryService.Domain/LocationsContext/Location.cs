@@ -1,89 +1,16 @@
-public class Location
-{
-    public Guid Id { get; }
-    public string Address { get; }
-    public string Name { get; }
-    public string TimeZone { get; }
-    public DateTime CreatedAt { get; }
-    public DateTime UpdatedAt { get; }
-}
+using System;
 
-private Location(
-    Guid id,
-    string address,
-    string name,
-    string timeZone,
-    DateTime createdAt,
-    DateTime updatedAt
-)
-{
-    Id = id;
-    Address = address;
-    Name = name;
-    TimeZone = timeZone;
-    CreatedAt = createdAt;
-    UpdatedAt = updatedAt;
-}
-
-public static Location Create(
-    Guid id,
-    string address,
-    string name,
-    string timeZone,
-    DateTime createdAt,
-    DateTime updatedAt
-)
-{
-    if (id == Guid.Empty)
-        throw new ArgumentException("Идентификатор не может быть пустым.", nameof(id));
-
-    if (string.IsNullOrWhiteSpace(name))
-        throw new ArgumentException("Название локации не может быть пустым.", nameof(name));
-
-    if (string.IsNullOrWhiteSpace(address))
-        throw new ArgumentException("Адрес локации не может быть пустым.", nameof(address));
-
-    if (createdAt == DateTime.MinValue || createdAt == DateTime.MaxValue)
-        throw new ArgumentException("Некорректное значение даты создания.", nameof(createdAt));
-
-    if (updatedAt == DateTime.MinValue || updatedAt == DateTime.MaxValue)
-        throw new ArgumentException(
-            "Некорректное значение даты обновления.",
-            nameof(updatedAt)
-        );
-
-    ValidateIanaTimeZone(timeZone);
-
-    
-    return new Location(id, address, name, timeZone, createdAt, updatedAt);
-}
-
-private static void ValidateIanaTimeZone(string input)
-{
-    if (string.IsNullOrWhiteSpace(input))
-        throw new ArgumentException("IANA временная зона не может быть пустой.", nameof(input));
-
-    if (!input.Contains('/'))
-        throw new ArgumentException("Некорректный формат IANA временной зоны.", nameof(input));
-
-    string[] parts = input.Split('/');
-    if (parts.Length != 2)
-        throw new ArgumentException("Некорректный формат IANA временной зоны.", nameof(input));
-
-    if (parts.Any(p => string.IsNullOrWhiteSpace(p)))
-        throw new ArgumentException("Некорректный формат IANA временной зоны.", nameof(input));
-
-}
+namespace DirectoryService.Domain.LocationsContext;
 
 public class Location
 {
-    public LocationId Id { get; }
-    public LocationName Name { get; }
-    public LocationAddress Address { get; }
-    public EntityLifeTime LifeTime { get; }
-    public IanaTimeZone TimeZone { get; }
+    public LocationId Id { get; private set; }
+    public LocationName Name { get; private set; }
+    public LocationAddress Address { get; private set; }
+    public IanaTimeZone TimeZone { get; private set; }
+    public EntityLifeTime LifeTime { get; private set; }
 
-    public Location(
+    private Location(
         LocationId id,
         LocationAddress address,
         LocationName name,
@@ -91,10 +18,49 @@ public class Location
         EntityLifeTime lifeTime
     )
     {
-        Id = id;
-        Address = address;
-        Name = name;
-        TimeZone = timeZone;
-        LifeTime = lifeTime;
+        Id = id ?? throw new ArgumentNullException(nameof(id));
+        Address = address ?? throw new ArgumentNullException(nameof(address));
+        Name = name ?? throw new ArgumentNullException(nameof(name));
+        TimeZone = timeZone ?? throw new ArgumentNullException(nameof(timeZone));
+        LifeTime = lifeTime ?? throw new ArgumentNullException(nameof(lifeTime));
+    }
+
+    public static Location Create(
+        LocationId id,
+        LocationAddress address,
+        LocationName name,
+        IanaTimeZone timeZone,
+        DateTime createdAt
+    )
+    {
+        var lifeTime = EntityLifeTime.Create(createdAt, createdAt, isActive: true);
+
+        return new Location(id, address, name, timeZone, lifeTime);
+    }
+
+    public void Update(
+        LocationName newName,
+        LocationAddress newAddress,
+        IanaTimeZone newTimeZone,
+        DateTime currentUtcTime
+    )
+    {
+        if (!LifeTime.IsActive)
+        {
+            throw new InvalidOperationException("Редактирование архивированных локаций запрещено.");
+        }
+
+        Name = newName ?? throw new ArgumentNullException(nameof(newName));
+        Address = newAddress ?? throw new ArgumentNullException(nameof(newAddress));
+        TimeZone = newTimeZone ?? throw new ArgumentNullException(nameof(newTimeZone));
+
+        LifeTime = EntityLifeTime.Create(LifeTime.CreatedAt, currentUtcTime, LifeTime.IsActive);
+    }
+
+    public void Archive(DateTime currentUtcTime)
+    {
+        if (!LifeTime.IsActive) return;
+
+        LifeTime = EntityLifeTime.Create(LifeTime.CreatedAt, currentUtcTime, isActive: false);
     }
 }
