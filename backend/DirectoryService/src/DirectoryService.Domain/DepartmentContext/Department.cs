@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using DirectoryService.Domain.DepartmentContext.ValueObjects;
 
 namespace DirectoryService.Domain.DepartmentContext;
@@ -65,22 +64,15 @@ public class Department
         DepartmentSlug slug,
         DepartmentId? parentId,
         IEnumerable<LocationId> locations,
-        DateTime createdAt,
-        Func<DepartmentName, bool> isNameUnique
+        DateTime createdAt
     )
     {
-        if (!isNameUnique(name))
-        {
-            throw new InvalidOperationException("Подразделение с таким названием уже существует.");
-        }
-
         var lifeTime = EntityLifeTime.Create(createdAt, createdAt, isActive: true);
         return new Department(id, name, slug, parentId, locations, lifeTime);
     }
 
     public void Update(
         DateTime currentUtcTime,
-        Func<DepartmentName, bool> isNameUnique,
         DepartmentName? newName = null,
         DepartmentSlug? newSlug = null
     )
@@ -94,10 +86,6 @@ public class Department
 
         if (newName != null && Name != newName)
         {
-            if (!isNameUnique(newName))
-            {
-                throw new InvalidOperationException("Подразделение с таким названием уже существует.");
-            }
             Name = newName;
             isChanged = true;
         }
@@ -115,7 +103,7 @@ public class Department
 
         if (isChanged)
         {
-            LifeTime = LifeTime with { UpdatedAt = currentUtcTime };
+            LifeTime = LifeTime.Update(currentUtcTime);
         }
     }
 
@@ -130,7 +118,7 @@ public class Department
         {
             ParentId = null;
             Path = DepartmentPath.Create(Slug);
-            LifeTime = LifeTime with { UpdatedAt = currentUtcTime };
+            LifeTime = LifeTime.Update(currentUtcTime);
             return;
         }
 
@@ -150,9 +138,8 @@ public class Department
         }
 
         ParentId = newParentId;
-
         Path = DepartmentPath.CreateForChild(parentPath, Slug);
-        LifeTime = LifeTime with { UpdatedAt = currentUtcTime };
+        LifeTime = LifeTime.Update(currentUtcTime);
     }
 
     public void AddLocation(LocationId locationId, DateTime currentUtcTime)
@@ -168,7 +155,7 @@ public class Department
         }
 
         _locations.Add(locationId);
-        LifeTime = LifeTime with { UpdatedAt = currentUtcTime };
+        LifeTime = LifeTime.Update(currentUtcTime);
     }
 
     public void AddPosition(PositionId positionId, DateTime currentUtcTime)
@@ -184,13 +171,13 @@ public class Department
         }
 
         _positions.Add(positionId);
-        LifeTime = LifeTime with { UpdatedAt = currentUtcTime };
+        LifeTime = LifeTime.Update(currentUtcTime);
     }
 
     public void Archive(DateTime currentUtcTime)
     {
         if (!LifeTime.IsActive) return;
 
-        LifeTime = LifeTime with { UpdatedAt = currentUtcTime, IsActive = false };
+        LifeTime = EntityLifeTime.Create(LifeTime.CreatedAt, currentUtcTime, isActive: false);
     }
 }

@@ -26,22 +26,15 @@ public class Position
         PositionId id,
         PositionName name,
         PositionDescription description,
-        DateTime createdAt,
-        Func<PositionName, bool> isNameUnique
+        DateTime createdAt
     )
     {
-        if (!isNameUnique(name))
-        {
-            throw new InvalidOperationException("Должность с таким названием уже существует в системе.");
-        }
-
         var lifeTime = EntityLifeTime.Create(createdAt, createdAt, isActive: true);
         return new Position(id, name, description, lifeTime);
     }
 
     public void UpdateName(
         DateTime currentUtcTime,
-        Func<PositionName, bool> isNameUnique,
         PositionName? newPosName = null
     )
     {
@@ -54,24 +47,20 @@ public class Position
 
         if (newPosName != null && Name != newPosName)
         {
-            if (!isNameUnique(newPosName))
-            {
-                throw new InvalidOperationException("Должность с таким названием уже существует в системе.");
-            }
-
             Name = newPosName;
             isChanged = true;
         }
 
         if (isChanged)
         {
-            LifeTime = LifeTime with { UpdatedAt = currentUtcTime };
+            LifeTime = LifeTime.Update(currentUtcTime);
         }
     }
 
     public void Archive(DateTime currentUtcTime)
     {
         if (!LifeTime.IsActive) return;
-        LifeTime = LifeTime with { UpdatedAt = currentUtcTime, IsActive = false };
+
+        LifeTime = EntityLifeTime.Create(LifeTime.CreatedAt, currentUtcTime, isActive: false);
     }
 }

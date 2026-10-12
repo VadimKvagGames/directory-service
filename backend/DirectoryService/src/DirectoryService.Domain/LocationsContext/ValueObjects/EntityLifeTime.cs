@@ -4,6 +4,11 @@ public sealed record EntityLifeTime
     public DateTime UpdatedAt { get; }
     public bool IsActive { get; }
 
+    public EntityLifeTime Update (DateTime currentUtcTime)
+    {
+        return Create(CreatedAt, currentUtcTime, IsActive);
+    }
+
     private EntityLifeTime(DateTime createdAt, DateTime updatedAt, bool isActive)
     {
         CreatedAt = createdAt;

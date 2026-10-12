@@ -72,7 +72,7 @@ public class Location
 
         if (isChanged)
         {
-            LifeTime = LifeTime with { UpdatedAt = currentUtcTime };
+            LifeTime = LifeTime.Update(currentUtcTime);
         }
     }
 
