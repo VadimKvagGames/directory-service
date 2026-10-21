@@ -8,6 +8,7 @@ public class Department
 {
     private readonly List<LocationId> _locations = [];
     private readonly List<PositionId> _positions = [];
+    private readonly List<DepartmentPositionRank> _positionRanks = [];
 
     public DepartmentId Id { get; private set; }
     public DepartmentName Name { get; private set; }
@@ -18,6 +19,7 @@ public class Department
 
     public IReadOnlyList<LocationId> Locations => _locations.AsReadOnly();
     public IReadOnlyList<PositionId> Positions => _positions.AsReadOnly();
+    public IReadOnlyList<DepartmentPositionRank> PositionRanks => _positionRanks.AsReadOnly();
 
     public Department(
         DepartmentId id,
@@ -173,7 +175,49 @@ public class Department
         _positions.Add(positionId);
         LifeTime = LifeTime.Update(currentUtcTime);
     }
+    public void AddPositionWithRank(PositionId positionId, int rank, DateTime currentUtcTime)
+    {
+        if (!LifeTime.IsActive)
+        {
+            throw new InvalidOperationException("Редактирование архивированных подразделений запрещено.");
+        }
 
+        if (_positionRanks.Exists(pr => pr.PositionId == positionId))
+        {
+            throw new InvalidOperationException("Эта должность уже присутствует в подразделении.");
+        }
+
+        if (_positionRanks.Exists(pr => pr.Rank == rank))
+        {
+            throw new InvalidOperationException("Должность с таким рангом уже зарегистрирована в данном подразделении.");
+        }
+
+        _positionRanks.Add(new DepartmentPositionRank(positionId, rank));
+        LifeTime = LifeTime.Update(currentUtcTime);
+    }
+
+    public void ChangePositionRank(PositionId positionId, int newRank, DateTime currentUtcTime)
+    {
+        if (!LifeTime.IsActive)
+        {
+            throw new InvalidOperationException("Редактирование архивированных подразделений запрещено.");
+        }
+
+        var targetIndex = _positionRanks.FindIndex(pr => pr.PositionId == positionId);
+        if (targetIndex == -1)
+        {
+            throw new InvalidOperationException("Указанная должность не найдена в этом подразделении.");
+        }
+
+        if (_positionRanks.Exists(pr => pr.Rank == newRank && pr.PositionId != positionId))
+        {
+            throw new InvalidOperationException("Должность с таким рангом уже зарегистрирована в данном подразделении.");
+        }
+
+        _positionRanks[targetIndex] = new DepartmentPositionRank(positionId, newRank);
+
+        LifeTime = LifeTime.Update(currentUtcTime);
+    }
     public void Archive(DateTime currentUtcTime)
     {
         if (!LifeTime.IsActive) return;
