@@ -63,4 +63,6 @@ public class Position
 
         LifeTime = EntityLifeTime.Create(LifeTime.CreatedAt, currentUtcTime, isActive: false);
     }
+
+    private Position() { }
 }
