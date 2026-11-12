@@ -224,4 +224,6 @@ public class Department
 
         LifeTime = EntityLifeTime.Create(LifeTime.CreatedAt, currentUtcTime, isActive: false);
     }
+
+    private Department() { }
 }

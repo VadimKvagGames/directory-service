@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16.13-alpine
+    container_name: directory_service_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: directory_service
+    ports:
+      - "5432:5432"
+    volumes:
+      - directory_service_data:/var/lib/postgresql/data
+
+volumes:
+  directory_service_data:

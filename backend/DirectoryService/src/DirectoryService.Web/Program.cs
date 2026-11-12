@@ -1,15 +1,25 @@
+using DirectoryService.Infrastructure.Postgres;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Нативный OpenAPI .NET 9/10
 builder.Services.AddOpenApi();
 
-// Для тестового контроллера
 builder.Services.AddControllers();
+
+
+builder.Services.Configure<DatabaseOptions>(
+    builder.Configuration.GetSection(nameof(DatabaseOptions)));
+
+builder.Services.AddDbContext<DirectoryDbContext>((sp, options) =>
+{
+    var dbOptions = sp.GetRequiredService<IOptions<DatabaseOptions>>().Value;
+    options.UseNpgsql(dbOptions.GetConnectionString());
+});
 
 WebApplication app = builder.Build();
 
-// Minimal API endpoints
 app.MapGet("/", () => "TemplateService is running!");
 
 app.MapGet("/health", () => Results.Ok(new
@@ -18,13 +28,12 @@ app.MapGet("/health", () => Results.Ok(new
     timestamp = DateTimeOffset.UtcNow
 }));
 
-// MVC контроллеры
 app.MapControllers();
 
 if (!app.Environment.IsProduction())
 {
-    app.MapOpenApi();              // /openapi/v1.json
-    app.MapScalarApiReference();   // /scalar/v1
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 await app.RunAsync();

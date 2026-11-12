@@ -20,4 +20,12 @@ public sealed record DepartmentPath
         string joinedPath = string.Join(SEPARATOR, parentPath.Value, childIdentifier.Value);
         return new DepartmentPath(joinedPath);
     }
+
+    public static DepartmentPath FromDatabase(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException("Путь подразделения не может быть пустым.", nameof(value));
+
+        return new DepartmentPath(value);
+    }
 }
